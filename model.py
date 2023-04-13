@@ -16,7 +16,7 @@ class MODEL_OUTPUT(enum.Enum):
     FIVE_DAYS = 2
 
 class CNN5d(nn.Module):
-    # input in shape of N*15*32
+    # input in shape of N*32*15
     # output in shape of N*1
     def __init__(self):
         super(CNN5d, self).__init__()
@@ -37,23 +37,23 @@ class CNN5d(nn.Module):
         return x
     
 class CNN20d(nn.Module):
-    # input in shape of N*60*64
+    # input in shape of N*64*60
     # output in shape of N*1
     # with 3 conv layers
     def __init__(self):
         super(CNN20d, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, (5, 3), padding=(2, 1))
-        self.conv2 = nn.Conv2d(64, 128, (5, 3), padding=(2, 1))
-        self.conv3 = nn.Conv2d(128, 256, (5, 3), padding=(2, 1))
-        self.fc1 = nn.Linear(46080, 1024)
+        self.conv1 = nn.Conv2d(1, 64, (5, 3), padding=1)
+        self.conv2 = nn.Conv2d(64, 128, (5, 3), padding=1)
+        self.conv3 = nn.Conv2d(128, 256, (5, 3), padding=1)
+        self.fc1 = nn.Linear(46080, 1)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2)
+        x = F.max_pool2d(x, (2, 1))
         x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2)
+        x = F.max_pool2d(x, (2, 1))
         x = F.relu(self.conv3(x))
-        x = F.max_pool2d(x, 2)
+        x = F.max_pool2d(x, (2, 1))
         x = x.view(-1, 46080)
         x = self.fc1(x)
         x = F.softmax(x, dim=1)

@@ -37,7 +37,7 @@ def train_in_roll(roll, input_type, output_type, batch_size=64, device='cpu', nu
 
 if __name__ == '__main__':
     roll = generate_roll(2010, 2021, 2)
-    train_in_roll(roll, MODEL_INPUT.FIVE_DAYS, MODEL_OUTPUT.ONE_DAY, 32)
-    train_in_roll(roll, MODEL_INPUT.FIVE_DAYS, MODEL_OUTPUT.FIVE_DAYS, 32)
+    # train_in_roll(roll, MODEL_INPUT.FIVE_DAYS, MODEL_OUTPUT.ONE_DAY, 32)
+    # train_in_roll(roll, MODEL_INPUT.FIVE_DAYS, MODEL_OUTPUT.FIVE_DAYS, 32)
     train_in_roll(roll, MODEL_INPUT.TWENTY_DAYS, MODEL_OUTPUT.ONE_DAY, 32)
-    train_in_roll(roll, MODEL_INPUT.TWENTY_DAYS, MODEL_OUTPUT.FIVE_DAYS, 32)
+    # train_in_roll(roll, MODEL_INPUT.TWENTY_DAYS, MODEL_OUTPUT.FIVE_DAYS, 32)
