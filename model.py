@@ -20,18 +20,20 @@ class CNN5d(nn.Module):
     # output in shape of N*1
     def __init__(self):
         super(CNN5d, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 3)
-        self.conv2 = nn.Conv2d(6, 16, 3)
-        self.fc1 = nn.Linear(16 * 4 * 3, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 1)
+        # conv1 is 5x3 conv, 64
+        # conv2 is 5x3 conv, 128
+        self.conv1 = nn.Conv2d(1, 64, (5, 3))
+        self.conv2 = nn.Conv2d(64, 128, (5, 3))
+        self.fc1 = nn.Linear(1280, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 1)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, 16 * 4 * 3)
+        x = x.view(-1, 1280)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -44,12 +46,12 @@ class CNN20d(nn.Module):
     # with 3 conv layers
     def __init__(self):
         super(CNN20d, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 3)
-        self.conv2 = nn.Conv2d(6, 16, 3)
-        self.conv3 = nn.Conv2d(16, 32, 3)
-        self.fc1 = nn.Linear(32 * 5 * 6, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 1)
+        self.conv1 = nn.Conv2d(1, 64, (5, 3))
+        self.conv2 = nn.Conv2d(64, 128, (5, 3))
+        self.conv3 = nn.Conv2d(128, 256, (5, 3))
+        self.fc1 = nn.Linear(5120, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 1)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -58,7 +60,7 @@ class CNN20d(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv3(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, 32 * 5 * 6)
+        x = x.view(-1, 5120)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
