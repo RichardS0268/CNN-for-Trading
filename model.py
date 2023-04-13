@@ -27,13 +27,14 @@ class CNN5d(nn.Module):
         self.fc1 = nn.Linear(15360, 1)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, (2, 1))
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, (2, 1))
-        x = x.view(-1, 15360)
-        x = self.fc1(x)
-        x = F.softmax(x, dim=1)
+        # input: N * 1 * 32 * 15
+        x = F.relu(self.conv1(x))   # output: N * 64 * 32 * 15
+        x = F.max_pool2d(x, (2, 1)) # output: N * 64 * 16 * 15
+        x = F.relu(self.conv2(x))   # output: N * 128 * 16 * 15
+        x = F.max_pool2d(x, (2, 1)) # output: N * 128 * 8 * 15
+        x = x.view(-1, 15360)       # output: N * 15360
+        x = self.fc1(x)             # output: N * 1
+        x = F.softmax(x, dim=1)     # output: N * 1
         return x
     
 class CNN20d(nn.Module):
@@ -48,15 +49,16 @@ class CNN20d(nn.Module):
         self.fc1 = nn.Linear(46080, 1)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, (2, 1))
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, (2, 1))
-        x = F.relu(self.conv3(x))
-        x = F.max_pool2d(x, (2, 1))
-        x = x.view(-1, 46080)
-        x = self.fc1(x)
-        x = F.softmax(x, dim=1)
+        # input: N * 1 * 64 * 60
+        x = F.relu(self.conv1(x))   # output: N * 64 * 62 * 60
+        x = F.max_pool2d(x, (2, 1)) # output: N * 64 * 31 * 60
+        x = F.relu(self.conv2(x))   # output: N * 128 * 29 * 60
+        x = F.max_pool2d(x, (2, 1)) # output: N * 128 * 14 * 60
+        x = F.relu(self.conv3(x))   # output: N * 256 * 12 * 60
+        x = F.max_pool2d(x, (2, 1)) # output: N * 256 * 6 * 60
+        x = x.view(-1, 46080)       # output: N * 46080
+        x = self.fc1(x)             # output: N * 1
+        x = F.softmax(x, dim=1)     # output: N * 1
         return x
 
 def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.001, batch_size=32, device='cpu', weight_decay=0.0):
