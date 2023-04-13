@@ -1,14 +1,5 @@
 from model import *
-import enum
 import matplotlib.pyplot as plt
-
-class MODEL_INPUT(enum.Enum):
-    FIVE_DAYS = 1
-    TWENTY_DAYS = 2
-
-class MODEL_OUTPUT(enum.Enum):
-    ONE_DAY = 1
-    FIVE_DAYS = 2
 
 def load_data(input_type = MODEL_INPUT.FIVE_DAYS, output_type = MODEL_OUTPUT.ONE_DAY, batch_size = 32):
     # randomly generate data of images in gray scale
@@ -18,14 +9,15 @@ def load_data(input_type = MODEL_INPUT.FIVE_DAYS, output_type = MODEL_OUTPUT.ONE
     # if input_type == MODEL_INPUT.TWENTY_DAYS:
     # the input is a picture of 60*64 pixels
     # the output is a float number
+    # the size of dataset is 1000
     if input_type == MODEL_INPUT.FIVE_DAYS:
-        train_dataset = torch.utils.data.TensorDataset(torch.rand(batch_size, 1, 32, 15), torch.rand(batch_size, 1))
-        val_dataset = torch.utils.data.TensorDataset(torch.rand(batch_size, 1, 32, 15), torch.rand(batch_size, 1))
-        test_dataset = torch.utils.data.TensorDataset(torch.rand(batch_size, 1, 32, 15), torch.rand(batch_size, 1))
+        train_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 32, 15), torch.rand(1000, 1))
+        val_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 32, 15), torch.rand(1000, 1))
+        test_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 32, 15), torch.rand(1000, 1))
     elif input_type == MODEL_INPUT.TWENTY_DAYS:
-        train_dataset = torch.utils.data.TensorDataset(torch.rand(batch_size, 1, 64, 60), torch.rand(batch_size, 1))
-        val_dataset = torch.utils.data.TensorDataset(torch.rand(batch_size, 1, 64, 60), torch.rand(batch_size, 1))
-        test_dataset = torch.utils.data.TensorDataset(torch.rand(batch_size, 1, 64, 60), torch.rand(batch_size, 1))
+        train_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 64, 60), torch.rand(1000, 1))
+        val_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 64, 60), torch.rand(1000, 1))
+        test_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 64, 60), torch.rand(1000, 1))
 
     # Data loader
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
@@ -52,7 +44,8 @@ def twenty_days():
         plt.imshow(inputs[3][0], cmap=plt.get_cmap('gray'))
         # show the plot
         plt.show()
-        break
+        if i == 2:
+            break
 
 
     # train model
