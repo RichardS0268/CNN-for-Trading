@@ -6,6 +6,13 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
+def num_flat_features(x):
+    size = x.size()[1:]
+    num_features = 1
+    for s in size:
+        num_features *= s
+    return num_features
+
 class CNN5d(nn.Module):
     # input in shape of N*15*32
     # output in shape of N*1
@@ -22,18 +29,12 @@ class CNN5d(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, self.num_flat_features(x))
+        x = x.view(-1, num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
     
-    def num_flat_features(self, x):
-        size = x.size()[1:]
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
     
 class CNN20d(nn.Module):
     # input in shape of N*60*64
@@ -55,18 +56,11 @@ class CNN20d(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv3(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, self.num_flat_features(x))
+        x = x.view(-1, num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-    
-    def num_flat_features(self, x):
-        size = x.size()[1:]
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
 
 def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.001, batch_size=32, device='cpu', weight_decay=0.0):
     model = model.to(device)
