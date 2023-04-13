@@ -5,13 +5,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
+import enum
 
-def num_flat_features(x):
-    size = x.size()[1:]
-    num_features = 1
-    for s in size:
-        num_features *= s
-    return num_features
+class MODEL_INPUT(enum.Enum):
+    FIVE_DAYS = 1
+    TWENTY_DAYS = 2
+
+class MODEL_OUTPUT(enum.Enum):
+    ONE_DAY = 1
+    FIVE_DAYS = 2
 
 class CNN5d(nn.Module):
     # input in shape of N*15*32
@@ -29,7 +31,7 @@ class CNN5d(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, num_flat_features(x))
+        x = x.view(-1, 16 * 4 * 3)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -56,7 +58,7 @@ class CNN20d(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv3(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, num_flat_features(x))
+        x = x.view(-1, 32 * 5 * 6)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
