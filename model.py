@@ -22,23 +22,19 @@ class CNN5d(nn.Module):
         super(CNN5d, self).__init__()
         # conv1 is 5x3 conv, 64
         # conv2 is 5x3 conv, 128
-        self.conv1 = nn.Conv2d(1, 64, (5, 3))
-        self.conv2 = nn.Conv2d(64, 128, (5, 3))
-        self.fc1 = nn.Linear(1280, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.fc3 = nn.Linear(512, 1)
+        self.conv1 = nn.Conv2d(1, 64, (5, 3), padding=(2, 1))
+        self.conv2 = nn.Conv2d(64, 128, (5, 3), padding=(2, 1))
+        self.fc1 = nn.Linear(15360, 1)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2)
+        x = F.max_pool2d(x, (2, 1))
         x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2)
-        x = x.view(-1, 1280)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = F.max_pool2d(x, (2, 1))
+        x = x.view(-1, 15360)
+        x = self.fc1(x)
+        x = F.softmax(x, dim=1)
         return x
-    
     
 class CNN20d(nn.Module):
     # input in shape of N*60*64
@@ -46,12 +42,10 @@ class CNN20d(nn.Module):
     # with 3 conv layers
     def __init__(self):
         super(CNN20d, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, (5, 3))
-        self.conv2 = nn.Conv2d(64, 128, (5, 3))
-        self.conv3 = nn.Conv2d(128, 256, (5, 3))
-        self.fc1 = nn.Linear(5120, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.fc3 = nn.Linear(512, 1)
+        self.conv1 = nn.Conv2d(1, 64, (5, 3), padding=(2, 1))
+        self.conv2 = nn.Conv2d(64, 128, (5, 3), padding=(2, 1))
+        self.conv3 = nn.Conv2d(128, 256, (5, 3), padding=(2, 1))
+        self.fc1 = nn.Linear(46080, 1024)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -60,10 +54,9 @@ class CNN20d(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv3(x))
         x = F.max_pool2d(x, 2)
-        x = x.view(-1, 5120)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = x.view(-1, 46080)
+        x = self.fc1(x)
+        x = F.softmax(x, dim=1)
         return x
 
 def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.001, batch_size=32, device='cpu', weight_decay=0.0):
