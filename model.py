@@ -65,7 +65,7 @@ def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.
     model = model.to(device)
     # train model
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    loss_func = nn.MSELoss().to(device)
+    loss_func = nn.BCELoss().to(device)
     for epoch in range(num_epochs):
         # training
         model.train()
@@ -100,7 +100,7 @@ def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.
 
 def test_model(model, test_loader, batch_size=32, device='cpu'):
     model = model.to(device)
-    loss_func = nn.MSELoss().to(device)
+    loss_func = nn.BCELoss().to(device)
     model.eval()
     t_loss = 0
     t_accu = 0
