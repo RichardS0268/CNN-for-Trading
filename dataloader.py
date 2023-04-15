@@ -23,7 +23,7 @@ def timer(name: str, _align): # ⏱
 
 def cal_indicators(tabular_df, indicator_name, parameters):
     if indicator_name == "MA":
-        assert len(slice_win_size) == 1, f'Wrong parameters num, expected 1, got {len(parameters)}'
+        assert len(parameters) == 1, f'Wrong parameters num, expected 1, got {len(parameters)}'
         slice_win_size = parameters[0]
         MA = tabular_df['close'].rolling(slice_win_size, min_periods=1).mean()
         return MA # pd.Series
