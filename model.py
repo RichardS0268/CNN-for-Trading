@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import enum
+from collections import OrderedDict
 
 class MODEL_INPUT(enum.Enum):
     FIVE_DAYS = 1
@@ -18,24 +19,31 @@ class MODEL_OUTPUT(enum.Enum):
 class CNN5d(nn.Module):
     # input in shape of N*32*15
     # output in shape of N*1
+    # with two conv layers
     def __init__(self):
         super(CNN5d, self).__init__()
-        # conv1 is 5x3 conv, 64
-        # conv2 is 5x3 conv, 128
-        self.conv1 = nn.Conv2d(1, 64, (5, 3), padding=(2, 1))
-        self.conv2 = nn.Conv2d(64, 128, (5, 3), padding=(2, 1))
-        self.fc1 = nn.Linear(15360, 2)
+        self.conv1 = nn.Sequential(OrderedDict([
+            ('Conv', nn.Conv2d(1, 64, (5, 3), padding=(2, 1), stride=(1, 1), dilation=(1, 1))), # output size: [N, 64, 32, 15]
+            ('ReLU', nn.ReLU()),
+            ('Max-Pool', nn.MaxPool2d((2,1))) # output size: [N, 64, 16, 15]
+        ]))
+        self.conv2 = nn.Sequential(OrderedDict([
+            ('Conv', nn.Conv2d(64, 128, (5, 3), padding=(2, 1), stride=(1, 1), dilation=(1, 1))), # output size: [N, 128, 16, 15]
+            ('ReLU', nn.ReLU()),
+            ('Max-Pool', nn.MaxPool2d((2,1))) # output size: [N, 128, 8, 15]
+        ]))
+
+        self.FC = nn.Linear(15360, 2)
+        self.Softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         # input: N * 32 * 15
-        x = x.unsqueeze(1)   # output: N * 1 * 32 * 15
-        x = F.relu(self.conv1(x))   # output: N * 64 * 32 * 15
-        x = F.max_pool2d(x, (2, 1)) # output: N * 64 * 16 * 15
-        x = F.relu(self.conv2(x))   # output: N * 128 * 16 * 15
-        x = F.max_pool2d(x, (2, 1)) # output: N * 128 * 8 * 15
-        x = x.view(-1, 15360)       # output: N * 15360
-        x = self.fc1(x)             # output: N * 1
-        x = F.softmax(x, dim=1)     # output: N * 1
+        x = x.unsqueeze(1).to(torch.float32)   # output size: [N, 1, 32, 15]
+        x = self.conv1(x) # output size: [N, 64, 16, 15]
+        x = self.conv2(x) # output size: [N, 128, 8, 15]
+        x = self.FC(x.view(x.shape[0], -1)) # output size: [N, 2]
+        x = self.Softmax(x)
+        
         return x
     
 class CNN20d(nn.Module):
@@ -44,34 +52,34 @@ class CNN20d(nn.Module):
     # with 3 conv layers
     def __init__(self):
         super(CNN20d, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, (5, 3), padding=1)
-        self.conv2 = nn.Conv2d(64, 128, (5, 3), padding=1)
-        self.conv3 = nn.Conv2d(128, 256, (5, 3), padding=1)
-        self.fc1 = nn.Linear(46080, 2)
+        self.conv1 = nn.Sequential(OrderedDict([
+            ('Conv', nn.Conv2d(1, 64, (5, 3), padding=(3, 1), stride=(3, 1), dilation=(2, 1))), # output size: [N, 64, 21, 60]
+            ('ReLU', nn.ReLU()),
+            ('Max-Pool', nn.MaxPool2d((2,1))) # output size: [N, 64, 10, 60]
+        ]))
+        self.conv2 = nn.Sequential(OrderedDict([
+            ('Conv', nn.Conv2d(64, 128, (5, 3), padding=(3, 1), stride=(1, 1), dilation=(1, 1))), # output size: [N, 128, 12, 60]
+            ('ReLU', nn.ReLU()),
+            ('Max-Pool', nn.MaxPool2d((2,1))) # output size: [N, 128, 6, 60]
+        ]))
+        self.conv3 = nn.Sequential(OrderedDict([
+            ('Conv', nn.Conv2d(128, 256, (5, 3), padding=(2, 1), stride=(1, 1), dilation=(1, 1))), # output size: [N, 256, 6, 60]
+            ('ReLU', nn.ReLU()),
+            ('Max-Pool', nn.MaxPool2d((2,1))) # output size: [N, 256, 3, 60]
+        ]))
+
+        self.FC = nn.Linear(46080, 2)
+        self.Softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         # input: N * 64 * 60
-        x = x.unsqueeze(1)   # output: N * 1 * 64 * 60
-        print(x.shape)
-        x = F.relu(self.conv1(x))   # output: N * 64 * 62 * 60
-        print(x.shape)
-        x = F.max_pool2d(x, (2, 1)) # output: N * 64 * 31 * 60
-        print(x.shape)
-        x = F.relu(self.conv2(x))   # output: N * 128 * 29 * 60
-        print(x.shape)
-        x = F.max_pool2d(x, (2, 1)) # output: N * 128 * 14 * 60
-        print(x.shape)
-        x = F.relu(self.conv3(x))   # output: N * 256 * 12 * 60
-        print(x.shape)
-        x = F.max_pool2d(x, (2, 1)) # output: N * 256 * 6 * 60
-        print(x.shape)
-        print("before view: ", x.shape)
-        x = x.view(x.shape[0], -1)       # output: N * 46080
-        print(x.shape)
-        x = self.fc1(x)             # output: N * 2
-        print(x.shape)
-        x = F.softmax(x, dim=1)     # output: N * 2
-        print(x.shape)
+        x = x.unsqueeze(1).to(torch.float32)   # output size: [N, 1, 64, 60]
+        x = self.conv1(x) # output size: [N, 64, 10, 60]
+        x = self.conv2(x) # output size: [N, 128, 6, 60]
+        x = self.conv3(x) # output size: [N, 256, 3, 60]
+        x = self.FC(x.view(x.shape[0], -1)) # output size: [N, 2]
+        x = self.Softmax(x)
+        
         return x
 
 def train_model(models, train_loader, val_loader, num_epochs=10, learning_rate=0.001, batch_size=32, device='cpu', weight_decay=0.0):

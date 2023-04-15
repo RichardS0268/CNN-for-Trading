@@ -3,23 +3,12 @@ from tqdm import tqdm
 import numpy as np
 import os
 from zipfile import ZipFile
-import sys
-from contextlib import contextmanager
-import time
 import warnings
 warnings.filterwarnings('ignore')
 import datetime
 from joblib import Parallel, delayed
+from utils import *
 
-
-@contextmanager 
-def timer(name: str, _align): # ⏱
-    s = time.time()
-    yield
-    elapsed = time.time() - s
-    print(f"{ '[' + name + ']' :{_align}} | {time.strftime('%Y-%m-%d %H:%M:%S')} Done | Using {elapsed: .3f} seconds")
-    
-    
 
 def cal_indicators(tabular_df, indicator_name, parameters):
     if indicator_name == "MA":
