@@ -8,6 +8,10 @@ foreach ($file in $files) {
     Write-Host $path
     # run the command
     python main.py $path
+
+    git add .
+    git commit -m "train on $($file) finished at $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")"
+    git push
 }
 Write-Host "train finishes at $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")"
 
