@@ -10,13 +10,15 @@ from joblib import Parallel, delayed
 from utils import *
 
 
+SUPPORTED_INDICATORS = ['MA']
+
 def cal_indicators(tabular_df, indicator_name, parameters):
     if indicator_name == "MA":
         assert len(parameters) == 1, f'Wrong parameters num, expected 1, got {len(parameters)}'
-        slice_win_size = parameters[0]
+        slice_win_size = int(parameters[0])
         MA = tabular_df['close'].rolling(slice_win_size, min_periods=1).mean()
         return MA # pd.Series
-    
+
 
 
 def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicators, show_volume):
@@ -32,11 +34,16 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
     
     Note: A single day's data occupies 3 pixel (width). First rows's dates should be prior to the start date in order to make sure there are enough data to generate image for the start date.
     
-    return -> list: each item of the list is [np.array(image_size), binary, binary, binary]. The last three binary (0./1.) are the label of ret1, ret5 and ret20
+    return -> list: each item of the list is [np.array(image_size), binary, binary, binary]. The last two binary (0./1.) are the label of ret5, ret20
     
     '''
-    for ind in indicators.keys():
-        tabular_df[ind] = cal_indicators(tabular_df, ind, indicators[ind])
+    ind_names = []
+    if indicators:
+        for i in range(len(indicators)//2):
+            ind = indicators[i*2].NAME
+            ind_names.append(ind)
+            params = str(indicators[i*2+1].PARAM).split(' ')
+            tabular_df[ind] = cal_indicators(tabular_df, ind, params)
     
     dataset = []
     lookback = image_size[1]//3
@@ -48,7 +55,7 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
         if tabular_df.iloc[d]['date'] < start_date:
             continue
         
-        price_slice = tabular_df[d-(lookback-1):d+1][['open', 'high', 'low', 'close']+list(indicators.keys())].reset_index(drop=True)
+        price_slice = tabular_df[d-(lookback-1):d+1][['open', 'high', 'low', 'close']+ind_names].reset_index(drop=True)
         volume_slice = tabular_df[d-(lookback-1):d+1][['volume']].reset_index(drop=True)
 
         # number of no transactions days > 0.2*look back days
@@ -76,28 +83,33 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
             image[price_slice.loc[i]['low']:price_slice.loc[i]['high']+1, i*3+1] = 255.
             image[price_slice.loc[i]['close'], i*3+2] = 255.
             # draw indicators
-            for ind in indicators.keys():
+            for ind in ind_names:
                 image[price_slice.loc[i][ind], i*3:i*3+2] = 255.
             # draw volume bars
             if show_volume:
                 image[:volume_slice.loc[i]['volume'], i*3+1] = 255.
     
-        label_ret1 = 1 if np.sign(tabular_df.iloc[d]['ret1']) > 0 else 0
         label_ret5 = 1 if np.sign(tabular_df.iloc[d]['ret5']) > 0 else 0
         label_ret20 = 1 if np.sign(tabular_df.iloc[d]['ret20']) > 0 else 0
         
-        entry = [image, label_ret1, label_ret5, label_ret20]
+        entry = [image, label_ret5, label_ret20]
         dataset.append(entry)
     return dataset
 
 
 class ImageDataSet():
-    def __init__(self, win_size, start_date, end_date, mode, indicators={}, show_volume=False):
+    def __init__(self, win_size, start_date, end_date, mode, indicators=[], show_volume=False, parallel_num=-1):
+        ## Check whether inputs are valid
         assert isinstance(start_date, int) and isinstance(end_date, int), f'Type Error: start_date & end_date shoule be int'
         assert start_date < end_date, f'start date {start_date} cannnot be later than end date {end_date}'
         assert win_size in [5, 20], f'Wrong look back days: {win_size}'
         assert mode in ['train', 'test'], f'Type Error: {mode}'
+        assert indicators is None or len(indicators)%2 == 0, 'Config Error, length of indicators should be even'
+        if indicators:
+            for i in range(len(indicators)//2):
+                assert indicators[2*i].NAME in SUPPORTED_INDICATORS, f"Error: Calculation of {indicators[2*i].NAME} is not defined"
         
+        ## Attributes of ImageDataSet
         if win_size == 5:
             self.image_size = (32, 15)
             self.extra_dates = datetime.timedelta(days=40)
@@ -110,9 +122,18 @@ class ImageDataSet():
         self.mode = mode
         self.indicators = indicators
         self.show_volume = show_volume
+        self.parallel_num = parallel_num
+        
+        ## Load data from zipfile
         self.load_data()
-        print(f"{self.mode.upper()} DataSet Initialized\n \t - Image Size:   {self.image_size}\n \t - Time Period:  {self.start_date} - {self.end_date}\n \t - Indicators:   {self.indicators}\n \t - Volume Shown: {self.show_volume}")
-        # self.generate_images()
+        
+        # Log info
+        if indicators:
+            ind_info = [(self.indicators[2*i].NAME, str(self.indicators[2*i+1].PARAM).split(' ')) for i in range(len(self.indicators)//2)]
+        else:
+            ind_info = []
+        print(f"{self.mode.upper()} DataSet Initialized\n \t - Image Size:   {self.image_size}\n \t - Time Period:  {self.start_date} - {self.end_date}\n \t - Indicators:   {ind_info}\n \t - Volume Shown: {self.show_volume}")
+        
         
     @timer('Load Data', '8')
     def load_data(self):
@@ -136,10 +157,8 @@ class ImageDataSet():
         self.df = tabularDf.loc[(tabularDf['date'] > padding_start_date) & (tabularDf['date'] < paddint_end_date)].copy(deep=False)
         tabularDf = [] # clear memory
         
-        self.df['ret1'] = np.zeros(self.df.shape[0])
         self.df['ret5'] = np.zeros(self.df.shape[0])
         self.df['ret20'] = np.zeros(self.df.shape[0])
-        self.df['ret1'] = (self.df['close'].pct_change()*100).shift(-1)
         self.df['ret5'] = (self.df['close'].pct_change(5)*100).shift(-5)
         self.df['ret20'] = (self.df['close'].pct_change(20)*100).shift(-20)
         
@@ -147,7 +166,7 @@ class ImageDataSet():
         
         
     def generate_images(self, sample_rate):
-        dataset_all = Parallel(n_jobs=32)(delayed(single_symbol_image)(\
+        dataset_all = Parallel(n_jobs=self.parallel_num)(delayed(single_symbol_image)(\
                                         g[1], image_size = self.image_size,\
                                            start_date = self.start_date,\
                                           sample_rate = sample_rate,\

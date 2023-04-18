@@ -1,83 +1,69 @@
+from importlib import reload
 from model import *
-import matplotlib.pyplot as plt
+from train import *
+from dataloader import *
+import dataloader as _D
+reload(_D)
+import utils as _U
+reload(_U)
+from collections import OrderedDict
+import yaml
+import argparse
 
-def load_data(input_type = MODEL_INPUT.FIVE_DAYS, output_type = MODEL_OUTPUT.ONE_DAY, batch_size = 32):
-    # randomly generate data of images in gray scale
-    # if input_type == MODEL_INPUT.FIVE_DAYS:
-    # the input is a picture of 15*32 pixels
-    # the output is a float number
-    # if input_type == MODEL_INPUT.TWENTY_DAYS:
-    # the input is a picture of 60*64 pixels
-    # the output is a float number
-    # the size of dataset is 1000
-    if input_type == MODEL_INPUT.FIVE_DAYS:
-        train_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 32, 15), torch.rand(1000, 1))
-        val_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 32, 15), torch.rand(1000, 1))
-        test_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 32, 15), torch.rand(1000, 1))
-    elif input_type == MODEL_INPUT.TWENTY_DAYS:
-        train_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 64, 60), torch.rand(1000, 1))
-        val_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 64, 60), torch.rand(1000, 1))
-        test_dataset = torch.utils.data.TensorDataset(torch.rand(1000, 1, 64, 60), torch.rand(1000, 1))
+parser = argparse.ArgumentParser(description='Train Models via YAML files')
+parser.add_argument('setting', type=str, \
+                    help='Experiment Settings, should be yaml files like those in /configs')
 
-    # Data loader
-    train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+args = parser.parse_args()
 
-    return train_loader, val_loader, test_loader
-    
+with open(args.setting, 'r') as f:
+    setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
 
 
-def twenty_days():
-    # load data
-    train_loader, val_loader, test_loader = load_data(MODEL_INPUT.TWENTY_DAYS, MODEL_OUTPUT.ONE_DAY)
-    # show example data
-    for i, (inputs, labels) in enumerate(train_loader):
-        # plot 4 images as gray scale
-        plt.subplot(221)
-        plt.imshow(inputs[0][0], cmap=plt.get_cmap('gray'))
-        plt.subplot(222)
-        plt.imshow(inputs[1][0], cmap=plt.get_cmap('gray'))
-        plt.subplot(223)
-        plt.imshow(inputs[2][0], cmap=plt.get_cmap('gray'))
-        plt.subplot(224)
-        plt.imshow(inputs[3][0], cmap=plt.get_cmap('gray'))
-        # show the plot
-        plt.show()
-        if i == 2:
-            break
+dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
+                            start_date = setting.DATASET.START_DATE, \
+                            end_date = setting.DATASET.END_DATE, \
+                            mode = setting.DATASET.MODE, \
+                            indicators = setting.DATASET.INDICATORS, \
+                            show_volume = setting.DATASET.SHOW_VOLUME, \
+                            parallel_num=setting.DATASET.PARALLEL_NUM)
+
+image_set = dataset.generate_images(setting.DATASET.SAMPLE_RATE)
+
+train_loader_size = int(len(image_set)*(1-setting.TRAIN.VALID_RATIO))
+valid_loader_size = len(image_set) - train_loader_size
+
+train_loader, valid_loader = torch.utils.data.random_split(image_set, [train_loader_size, valid_loader_size])
+train_loader = torch.utils.data.DataLoader(dataset=train_loader, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=True)
+valid_loader = torch.utils.data.DataLoader(dataset=valid_loader, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=False)
 
 
-    # train model
-    model = CNN20d()
-    train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.001, batch_size=32, device='cpu', weight_decay=0.0)
-    test_model(model, test_loader, device='cpu')
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
 
-def five_days():
-    # load data
-    train_loader, val_loader, test_loader = load_data(MODEL_INPUT.FIVE_DAYS, MODEL_OUTPUT.ONE_DAY)
-    # show example data
-    for i, (inputs, labels) in enumerate(train_loader):
-        # plot 4 images as gray scale
-        plt.subplot(221)
-        plt.imshow(inputs[0][0], cmap=plt.get_cmap('gray'))
-        plt.subplot(222)
-        plt.imshow(inputs[1][0], cmap=plt.get_cmap('gray'))
-        plt.subplot(223)
-        plt.imshow(inputs[2][0], cmap=plt.get_cmap('gray'))
-        plt.subplot(224)
-        plt.imshow(inputs[3][0], cmap=plt.get_cmap('gray'))
-        # show the plot
-        plt.show()
-        break
-
-
-    # train model
-    model = CNN5d()
-    train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.001, batch_size=32, device='cpu', weight_decay=0.0)
-    test_model(model, test_loader, device='cpu')
+if 'models' not in os.listdir('./'):
+    os.system('mkdir models')
+if setting.TRAIN.MODEL_SAVE_FILE.split('/')[1] not in os.listdir('./models/'):
+    os.system(f"cd models && mkdir {setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]}")
+if 'logs' not in os.listdir('./'):
+    os.system('mkdir logs')
+if setting.TRAIN.LOG_SAVE_FILE.split('/')[1] not in os.listdir('./logs/'):
+    os.system(f"cd logs && mkdir {setting.TRAIN.LOG_SAVE_FILE.split('/')[1]}")
 
 
 if __name__ == '__main__':
-    five_days()
-    twenty_days()
+    if setting.MODEL == 'CNN5d':
+        model = CNN5d()
+    else:
+        model = CNN20d()
+    model.to(device)
+
+    criterion = nn.BCELoss()
+    optimizer = optim.Adam(model.parameters(), lr=setting.TRAIN.LEARNING_RATE, weight_decay=setting.TRAIN.WEIGHT_DECAY)
+    
+    train_loss_set, valid_loss_set, train_acc_set, valid_acc_set = train_n_epochs(setting.TRAIN.NEPOCH, model, setting.TRAIN.LABEL, train_loader, valid_loader, criterion, optimizer, setting.TRAIN.MODEL_SAVE_FILE)
+    
+    log = pd.DataFrame([train_loss_set, train_acc_set, valid_loss_set, valid_acc_set], index=['train_loss', 'train_acc', 'valid_loss', 'valid_acc'])
+    log.to_csv(setting.TRAIN.LOG_SAVE_FILE)
+    
+    
