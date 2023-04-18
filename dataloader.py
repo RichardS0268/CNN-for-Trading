@@ -93,8 +93,10 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
 
 class ImageDataSet():
     def __init__(self, win_size, start_date, end_date, mode, indicators={}, show_volume=False):
-        assert mode in ['train', 'test'], f'Type Error: {mode}'
+        assert isinstance(start_date, int) and isinstance(end_date, int), f'Type Error: start_date & end_date shoule be int'
+        assert start_date < end_date, f'start date {start_date} cannnot be later than end date {end_date}'
         assert win_size in [5, 20], f'Wrong look back days: {win_size}'
+        assert mode in ['train', 'test'], f'Type Error: {mode}'
         
         if win_size == 5:
             self.image_size = (32, 15)
@@ -129,10 +131,9 @@ class ImageDataSet():
             z.close()
             
         # add extra rows to make sure image of start date and returns of end date can be calculated
-        
         padding_start_date = int(str(pd.to_datetime(str(self.start_date)) - self.extra_dates).split(' ')[0].replace('-', ''))
         paddint_end_date = int(str(pd.to_datetime(str(self.end_date)) + self.extra_dates).split(' ')[0].replace('-', ''))
-        self.df = tabularDf.loc[(tabularDf['date'] > padding_start_date) & (tabularDf['date'] < paddint_end_date)]
+        self.df = tabularDf.loc[(tabularDf['date'] > padding_start_date) & (tabularDf['date'] < paddint_end_date)].copy(deep=False)
         tabularDf = [] # clear memory
         
         self.df['ret1'] = np.zeros(self.df.shape[0])
