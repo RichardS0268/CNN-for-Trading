@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, criterion, optimizer, savefile):
+def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, criterion, optimizer, savefile, early_stop_epoch):
     valid_loss_min = np.Inf # track change in validation loss
     train_loss_set = []
     valid_loss_set = []
@@ -96,7 +96,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
         else:
             invariant_epochs = invariant_epochs + 1
         
-        if invariant_epochs == 16:
+        if invariant_epochs == early_stop_epoch:
             print(f"Early Stop at Epoch [{epoch_i}]: Performance hasn't enhanced for 16 epochs")
             break
 

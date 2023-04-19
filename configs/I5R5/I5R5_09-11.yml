@@ -22,3 +22,7 @@ TRAIN:
   MODEL_SAVE_FILE: models/I5R5/I5R5_09-11.tar
   LOG_SAVE_FILE: logs/I5R5/I5R5_09-11.csv
 
+TEST:
+  SAMPLE_RATE: 0.5
+  
+

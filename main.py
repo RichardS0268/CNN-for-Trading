@@ -6,7 +6,6 @@ import dataloader as _D
 reload(_D)
 import utils as _U
 reload(_U)
-from collections import OrderedDict
 import yaml
 import argparse
 
@@ -61,7 +60,7 @@ if __name__ == '__main__':
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=setting.TRAIN.LEARNING_RATE, weight_decay=setting.TRAIN.WEIGHT_DECAY)
     
-    train_loss_set, valid_loss_set, train_acc_set, valid_acc_set = train_n_epochs(setting.TRAIN.NEPOCH, model, setting.TRAIN.LABEL, train_loader, valid_loader, criterion, optimizer, setting.TRAIN.MODEL_SAVE_FILE)
+    train_loss_set, valid_loss_set, train_acc_set, valid_acc_set = train_n_epochs(setting.TRAIN.NEPOCH, model, setting.TRAIN.LABEL, train_loader, valid_loader, criterion, optimizer, setting.TRAIN.MODEL_SAVE_FILE, setting.TRAIN.MODEL_SAVE_FILE)
     
     log = pd.DataFrame([train_loss_set, train_acc_set, valid_loss_set, valid_acc_set], index=['train_loss', 'train_acc', 'valid_loss', 'valid_acc'])
     log.to_csv(setting.TRAIN.LOG_SAVE_FILE)

@@ -103,7 +103,7 @@ class ImageDataSet():
         assert isinstance(start_date, int) and isinstance(end_date, int), f'Type Error: start_date & end_date shoule be int'
         assert start_date < end_date, f'start date {start_date} cannnot be later than end date {end_date}'
         assert win_size in [5, 20], f'Wrong look back days: {win_size}'
-        assert mode in ['train', 'test'], f'Type Error: {mode}'
+        assert mode in ['default'], f'Type Error: {mode}'
         assert indicators is None or len(indicators)%2 == 0, 'Config Error, length of indicators should be even'
         if indicators:
             for i in range(len(indicators)//2):
@@ -132,7 +132,7 @@ class ImageDataSet():
             ind_info = [(self.indicators[2*i].NAME, str(self.indicators[2*i+1].PARAM).split(' ')) for i in range(len(self.indicators)//2)]
         else:
             ind_info = []
-        print(f"{self.mode.upper()} DataSet Initialized\n \t - Image Size:   {self.image_size}\n \t - Time Period:  {self.start_date} - {self.end_date}\n \t - Indicators:   {ind_info}\n \t - Volume Shown: {self.show_volume}")
+        print(f"DataSet Initialized\n \t - Mode:         {self.mode.upper()}\n \t - Image Size:   {self.image_size}\n \t - Time Period:  {self.start_date} - {self.end_date}\n \t - Indicators:   {ind_info}\n \t - Volume Shown: {self.show_volume}")
         
         
     @timer('Load Data', '8')
