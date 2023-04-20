@@ -2,7 +2,7 @@
 <HR>
 
 ## Architecture of model
-![architecture]("https://github.com/RichardS0268/CNN-for-Trading/blob/main/imgs/CNN%20architecture.png")
+![architecture](imgs/CNN architecture.png)
 
 ## File Introduction
 |File Name|Usage|
