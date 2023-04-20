@@ -1,19 +1,16 @@
 # CNN-for-Trading
-<HR>
+| ***Report:*** *https://www.richardsong.space/cnn-for-trading*
 
 ## Architecture of model
-![architecture](imgs/architecture.png)
+<img src="https://user-images.githubusercontent.com/76866748/233301890-e7f816c1-3b69-488b-b275-de77258fb58d.png" width=50%>
 
-## File Introduction
-|File Name|Usage|
-|:-:|:-:|
-|model.py|Defination of models and training function|
-|main.py|Basic train test|
-|imgs|Dir for images to display in markdown|
-|train_in_roll.py|Define the way to train in roll and format the output for model evaluation(Key part of this project)|
 
 ## Ways to set up and run
-**Simply test the run-ability of the model**:
-```python
-python main.py
+Train:
+```Batch
+python main.py "xxx.yml"
+```
+Test:
+```Batch
+python test.py "xxx.yml"
 ```
