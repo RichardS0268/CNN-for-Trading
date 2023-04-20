@@ -6,7 +6,6 @@
 
 
 ## Ways to set up and run
-**Simply test the run-ability of the model**:
 Train:
 ```Batch
 python main.py "xxx.yml"
