@@ -13,7 +13,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
     valid_acc_set = []
     invariant_epochs = 0
     
-    for epoch in range(1, n_epochs+1):
+    for epoch_i in range(1, n_epochs+1):
 
         # keep track of training and validation loss
         train_loss, train_acc = 0.0, 0.0
@@ -21,7 +21,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
         
         #### Model for training 
         model.train()
-        for epoch_i, (data, ret5, ret20) in enumerate(train_loader):
+        for i, (data, ret5, ret20) in enumerate(train_loader):
             assert label_type in ['RET5', 'RET20'], f"Wrong Label Type: {label_type}"
             if label_type == 'RET5':
                 target = ret5
@@ -81,7 +81,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
         valid_acc = valid_acc/len(valid_loader.sampler)
         valid_acc_set.append(valid_acc.cpu().numpy())
             
-        print('Epoch: {} Training Loss: {:.6f} Validation Loss: {:.6f} Training Acc: {:.5f} Validation Acc: {:.5f}'.format(epoch, train_loss, valid_loss, train_acc, valid_acc))
+        print('Epoch: {} Training Loss: {:.6f} Validation Loss: {:.6f} Training Acc: {:.5f} Validation Acc: {:.5f}'.format(epoch_i, train_loss, valid_loss, train_acc, valid_acc))
         
         # if validation loss gets smaller, save the model
         if valid_loss <= valid_loss_min:
@@ -89,7 +89,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
             valid_loss_min = valid_loss
             invariant_epochs = 0
             torch.save({
-                'epoch': epoch,
+                'epoch': epoch_i,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict()
                 }, savefile)
@@ -97,7 +97,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
             invariant_epochs = invariant_epochs + 1
         
         if invariant_epochs == early_stop_epoch:
-            print(f"Early Stop at Epoch [{epoch_i}]: Performance hasn't enhanced for 16 epochs")
+            print(f"Early Stop at Epoch [{epoch_i}]: Performance hasn't enhanced for {early_stop_epoch} epochs")
             break
 
     return train_loss_set, valid_loss_set, train_acc_set, valid_acc_set
@@ -105,7 +105,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
 
 
 def plot_loss_and_acc(loss_and_acc_dict):
-    _, axes = plt.subplots(1, 2, figsize=(20, 6), dpi=300)
+    _, axes = plt.subplots(1, 2, figsize=(20, 6))
     tmp = list(loss_and_acc_dict.values())
     maxEpoch = len(tmp[0][0])
 

@@ -172,7 +172,7 @@ class ImageDataSet():
                                           sample_rate = sample_rate,\
                                            indicators = self.indicators,\
                                           show_volume = self.show_volume
-                                        ) for g in tqdm(self.df.groupby('code'), desc='Generating Images'))
+                                        ) for g in tqdm(self.df.groupby('code'), desc=f'Generating Images (sample rate: {sample_rate})'))
         
         self.dataset_squeeze = []
         for symbol_data in dataset_all:

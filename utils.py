@@ -13,6 +13,7 @@ def timer(name: str, _align): # ⏱
 
 def display_image(entry):
     assert (type(entry) == list) and (len(entry) == 3), "Type error, expected a list with length of 4"
+    plt.figure
     plt.imshow(entry[0], cmap=plt.get_cmap('gray'))
     plt.ylim((0,entry[0].shape[0]-1))
     plt.xlim((0,entry[0].shape[1]-1))
