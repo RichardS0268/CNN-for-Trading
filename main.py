@@ -1,8 +1,8 @@
 from importlib import reload
 from model import *
 from train import *
-from dataloader import *
-import dataloader as _D
+from dataset import *
+import dataset as _D
 reload(_D)
 import utils as _U
 reload(_U)
