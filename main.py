@@ -34,7 +34,7 @@ valid_loader_size = len(image_set) - train_loader_size
 
 train_loader, valid_loader = torch.utils.data.random_split(image_set, [train_loader_size, valid_loader_size])
 train_loader = torch.utils.data.DataLoader(dataset=train_loader, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=True)
-valid_loader = torch.utils.data.DataLoader(dataset=valid_loader, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=False)
+valid_loader = torch.utils.data.DataLoader(dataset=valid_loader, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=True)
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
