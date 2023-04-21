@@ -1,8 +1,8 @@
 from importlib import reload
 from model import *
 from train import *
-from dataloader import *
-import dataloader as _D
+from dataset import *
+import dataset as _D
 reload(_D)
 import utils as _U
 reload(_U)
@@ -18,23 +18,11 @@ args = parser.parse_args()
 with open(args.setting, 'r') as f:
     setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
 
-dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
-                            start_date = setting.TEST.START_DATE, \
-                            end_date = setting.TEST.END_DATE, \
-                            mode = setting.DATASET.MODE, \
-                            indicators = setting.DATASET.INDICATORS, \
-                            show_volume = setting.DATASET.SHOW_VOLUME, \
-                            parallel_num=setting.DATASET.PARALLEL_NUM)
-
-image_set = dataset.generate_images(setting.TEST.SAMPLE_RATE)
-
-test_loader = torch.utils.data.DataLoader(dataset=image_set, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=False)
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
 
 
-def model_test(model, label_type, classes, test_loader, criterion):
+def model_test(model, label_type, classes, criterion):
     # track test loss
     test_loss = 0.0
     class_correct = [0., 0.]
@@ -42,34 +30,48 @@ def model_test(model, label_type, classes, test_loader, criterion):
 
     model.eval()
     # iterate over test data
-    for i, (data, ret5, ret20) in enumerate(test_loader):
-        assert label_type in ['RET5', 'RET20'], f"Wrong Label Type: {label_type}"
-        if label_type == 'RET5':
-            target = ret5
-        else:
-            target = ret20
+    sub_points = [setting.TEST.START_DATE] + [int(setting.TEST.END_DATE//1e4 * 1e4) + i*100 + 1 for i in range(4, 13, 3)] + [setting.TEST.END_DATE]
+    
+    for m_idx in range(len(sub_points)-1):
+        print(f"Testing: {sub_points[m_idx]} - {sub_points[m_idx+1]}")
+        test_dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
+                            start_date = sub_points[m_idx], \
+                            end_date = sub_points[m_idx+1], \
+                            mode = 'default', \
+                            indicators = setting.DATASET.INDICATORS, \
+                            show_volume = setting.DATASET.SHOW_VOLUME, \
+                            parallel_num=setting.DATASET.PARALLEL_NUM)
+        test_imageset = test_dataset.generate_images(1.0)
+        test_loader = torch.utils.data.DataLoader(dataset=test_imageset, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=False)
             
-        target = (1-target).unsqueeze(1) @ torch.LongTensor([1., 0.]).unsqueeze(1).T + target.unsqueeze(1) @ torch.LongTensor([0, 1]).unsqueeze(1).T
-        target = target.to(torch.float32)
-            
-        # move tensors to GPU if CUDA is available
-        data, target = data.to(device), target.to(device)
-        # forward pass: compute predicted outputs by passing inputs to the model
-        output = model(data)
-        # calculate the batch loss
-        loss = criterion(output, target)
-        # update test loss 
-        test_loss += loss.item()*data.size(0)
-        # convert output probabilities to predicted class
-        pred = torch.argmax(output, 1)    
-        # compare predictions to true label
-        correct_tensor = pred.eq(torch.argmax(target, 1).data.view_as(pred))
-        correct = np.squeeze(correct_tensor.numpy()) if not device == 'cuda' else np.squeeze(correct_tensor.cpu().numpy())
-        # calculate test accuracy for each object class
-        for i in range(target.shape[0]):
-            label = torch.argmax(target.data[i])
-            class_correct[label] += correct[i].item()
-            class_total[label] += 1
+        for i, (data, ret5, ret20) in enumerate(test_loader):
+            assert label_type in ['RET5', 'RET20'], f"Wrong Label Type: {label_type}"
+            if label_type == 'RET5':
+                target = ret5
+            else:
+                target = ret20
+                
+            target = (1-target).unsqueeze(1) @ torch.LongTensor([1., 0.]).unsqueeze(1).T + target.unsqueeze(1) @ torch.LongTensor([0, 1]).unsqueeze(1).T
+            target = target.to(torch.float32)
+                
+            # move tensors to GPU if CUDA is available
+            data, target = data.to(device), target.to(device)
+            # forward pass: compute predicted outputs by passing inputs to the model
+            output = model(data)
+            # calculate the batch loss
+            loss = criterion(output, target)
+            # update test loss 
+            test_loss += loss.item()*data.size(0)
+            # convert output probabilities to predicted class
+            pred = torch.argmax(output, 1)    
+            # compare predictions to true label
+            correct_tensor = pred.eq(torch.argmax(target, 1).data.view_as(pred))
+            correct = np.squeeze(correct_tensor.numpy()) if not device == 'cuda' else np.squeeze(correct_tensor.cpu().numpy())
+            # calculate test accuracy for each object class
+            for i in range(target.shape[0]):
+                label = torch.argmax(target.data[i])
+                class_correct[label] += correct[i].item()
+                class_total[label] += 1
 
     # average test loss
     test_loss = test_loss/len(test_loader.dataset)
@@ -100,4 +102,4 @@ if __name__ == '__main__':
 
     criterion = nn.BCELoss()
 
-    model_test(model, setting.TRAIN.LABEL, ['down', 'up'], test_loader, criterion)
+    model_test(model, setting.TRAIN.LABEL, ['down', 'up'], criterion)

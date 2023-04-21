@@ -21,7 +21,7 @@ def cal_indicators(tabular_df, indicator_name, parameters):
 
 
 
-def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicators, show_volume):
+def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicators, show_volume, mode):
     ''' generate Candlelist images
     
     parameters: [
@@ -30,6 +30,7 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
         start_date  -> int: truncate extra rows after generating images,
         indicators  -> dict: technical indicators added on the image, e.g. {"MA": [20]},
         show_volume -> boolean: show volume bars or not
+        mode        -> 'default': for train & validation & test; 'inference': for inference
     ]
     
     Note: A single day's data occupies 3 pixel (width). First rows's dates should be prior to the start date in order to make sure there are enough data to generate image for the start date.
@@ -37,6 +38,8 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
     return -> list: each item of the list is [np.array(image_size), binary, binary, binary]. The last two binary (0./1.) are the label of ret5, ret20
     
     '''
+    
+    
     ind_names = []
     if indicators:
         for i in range(len(indicators)//2):
@@ -46,6 +49,7 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
             tabular_df[ind] = cal_indicators(tabular_df, ind, params)
     
     dataset = []
+    valid_dates = []
     lookback = image_size[1]//3
     for d in range(lookback-1, len(tabular_df)):
         # random skip some trading dates
@@ -61,6 +65,8 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
         # number of no transactions days > 0.2*look back days
         if (1.0*(price_slice[['open', 'high', 'low', 'close']].sum(axis=1)/price_slice['open'] == 4)).sum() > lookback//5: 
             continue
+        
+        valid_dates.append(tabular_df.iloc[d]['date']) # trading dates surviving the validation
         
         # project price into quantile
         price_slice = (price_slice - np.min(price_slice.values))/(np.max(price_slice.values) - np.min(price_slice.values))
@@ -94,7 +100,11 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
         
         entry = [image, label_ret5, label_ret20]
         dataset.append(entry)
-    return dataset
+    
+    if mode == 'default':
+        return dataset
+    else:
+        return [tabular_df.iloc[0]['code'], dataset, valid_dates]
 
 
 class ImageDataSet():
@@ -103,7 +113,7 @@ class ImageDataSet():
         assert isinstance(start_date, int) and isinstance(end_date, int), f'Type Error: start_date & end_date shoule be int'
         assert start_date < end_date, f'start date {start_date} cannnot be later than end date {end_date}'
         assert win_size in [5, 20], f'Wrong look back days: {win_size}'
-        assert mode in ['default'], f'Type Error: {mode}'
+        assert mode in ['default', 'inference'], f'Type Error: {mode}'
         assert indicators is None or len(indicators)%2 == 0, 'Config Error, length of indicators should be even'
         if indicators:
             for i in range(len(indicators)//2):
@@ -171,12 +181,17 @@ class ImageDataSet():
                                            start_date = self.start_date,\
                                           sample_rate = sample_rate,\
                                            indicators = self.indicators,\
-                                          show_volume = self.show_volume
+                                          show_volume = self.show_volume, \
+                                            mode = self.mode
                                         ) for g in tqdm(self.df.groupby('code'), desc=f'Generating Images (sample rate: {sample_rate})'))
         
-        self.dataset_squeeze = []
-        for symbol_data in dataset_all:
-            self.dataset_squeeze = self.dataset_squeeze + symbol_data
-        dataset_all = [] # clear memory
-        
-        return self.dataset_squeeze
+        if self.mode == 'default':
+            self.dataset_squeeze = []
+            for symbol_data in dataset_all:
+                self.dataset_squeeze = self.dataset_squeeze + symbol_data
+            dataset_all = [] # clear memory
+            
+            return self.dataset_squeeze
+    
+        else:
+            return dataset_all
