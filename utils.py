@@ -1,7 +1,5 @@
-from contextlib import contextmanager
-import time
-import matplotlib.pyplot as plt
-from collections import namedtuple
+from __init__ import *
+
 
 @contextmanager 
 def timer(name: str, _align): # ⏱
@@ -12,7 +10,7 @@ def timer(name: str, _align): # ⏱
     
 
 def display_image(entry):
-    assert (type(entry) == list) and (len(entry) == 3), "Type error, expected a list with length of 4"
+    assert (type(entry) == np.ndarray) and (len(entry) == 3), "Type error, expected a ndarray with length of 3"
     plt.figure
     plt.imshow(entry[0], cmap=plt.get_cmap('gray'))
     plt.ylim((0,entry[0].shape[0]-1))

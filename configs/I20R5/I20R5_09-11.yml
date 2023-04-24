@@ -9,8 +9,8 @@ DATASET:
     - NAME: MA
     - PARAM: 20 # using data augmentation
   SHOW_VOLUME: True # using data augmentation
-  SAMPLE_RATE: 0.2
-  PARALLEL_NUM: 32
+  SAMPLE_RATE: 0.002
+  PARALLEL_NUM: 16
 
 TRAIN:
   LABEL: RET5

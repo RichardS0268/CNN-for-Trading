@@ -1,30 +1,7 @@
-from importlib import reload
+from __init__ import *
+from utils import *
 from model import *
-from train import *
 from dataset import *
-import dataset as _D
-reload(_D)
-import utils as _U
-reload(_U)
-import yaml
-import argparse
-
-parser = argparse.ArgumentParser(description='Train Models via YAML files')
-parser.add_argument('setting', type=str, \
-                    help='Experiment Settings, should be yaml files like those in /configs')
-
-args = parser.parse_args()
-
-with open(args.setting, 'r') as f:
-    setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
-
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
-
-if 'factors' not in os.listdir('./'):
-    os.system('mkdir factors')
-if setting.INFERENCE.FACTORS_SAVE_FILE.split('/')[1] not in os.listdir('./factors/'):
-    os.system(f"cd factors && mkdir {setting.INFERENCE.FACTORS_SAVE_FILE.split('/')[1]}")
 
 
 def model_inference(model):
@@ -37,7 +14,7 @@ def model_inference(model):
     for m_idx in range(len(sub_points)-1):
         print(f"Inferencing: {sub_points[m_idx]} - {sub_points[m_idx+1]}")
         
-        inference_dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
+        inference_dataset = ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                                         start_date = sub_points[m_idx], \
                                         end_date = sub_points[m_idx+1], \
                                         mode = 'inference', \
@@ -66,6 +43,24 @@ def model_inference(model):
 
 
 if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser(description='Train Models via YAML files')
+    parser.add_argument('setting', type=str, \
+                        help='Experiment Settings, should be yaml files like those in /configs')
+
+    args = parser.parse_args()
+
+    with open(args.setting, 'r') as f:
+        setting = Dict2ObjParser(yaml.safe_load(f)).parse()
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
+
+    if 'factors' not in os.listdir('./'):
+        os.system('mkdir factors')
+    if setting.INFERENCE.FACTORS_SAVE_FILE.split('/')[1] not in os.listdir('./factors/'):
+        os.system(f"cd factors && mkdir {setting.INFERENCE.FACTORS_SAVE_FILE.split('/')[1]}")
+        
     if setting.MODEL == 'CNN5d':
         model = CNN5d()
     else:

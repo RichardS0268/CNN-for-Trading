@@ -1,12 +1,6 @@
 # each day is displayed in 3 pixels
 # use cnn to predict 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import numpy as np
-import enum
-from collections import OrderedDict
+from __init__ import *
 
 
 class CNN5d(nn.Module):

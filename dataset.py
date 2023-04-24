@@ -1,12 +1,4 @@
-import pandas as pd
-from tqdm import tqdm
-import numpy as np
-import os
-from zipfile import ZipFile
-import warnings
-warnings.filterwarnings('ignore')
-import datetime
-from joblib import Parallel, delayed
+from __init__ import *
 from utils import *
 
 
@@ -108,12 +100,13 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
 
 
 class ImageDataSet():
-    def __init__(self, win_size, start_date, end_date, mode, indicators=[], show_volume=False, parallel_num=-1):
+    def __init__(self, win_size, start_date, end_date, mode, label, indicators=[], show_volume=False, parallel_num=-1):
         ## Check whether inputs are valid
         assert isinstance(start_date, int) and isinstance(end_date, int), f'Type Error: start_date & end_date shoule be int'
         assert start_date < end_date, f'start date {start_date} cannnot be later than end date {end_date}'
         assert win_size in [5, 20], f'Wrong look back days: {win_size}'
         assert mode in ['default', 'inference'], f'Type Error: {mode}'
+        assert label in ['RET5', 'RET20'], f'Wrong Label: {label}'
         assert indicators is None or len(indicators)%2 == 0, 'Config Error, length of indicators should be even'
         if indicators:
             for i in range(len(indicators)//2):
@@ -130,6 +123,7 @@ class ImageDataSet():
         self.start_date = start_date
         self.end_date = end_date 
         self.mode = mode
+        self.label = label
         self.indicators = indicators
         self.show_volume = show_volume
         self.parallel_num = parallel_num
@@ -186,12 +180,30 @@ class ImageDataSet():
                                         ) for g in tqdm(self.df.groupby('code'), desc=f'Generating Images (sample rate: {sample_rate})'))
         
         if self.mode == 'default':
-            self.dataset_squeeze = []
+            dataset_squeeze = []
             for symbol_data in dataset_all:
-                self.dataset_squeeze = self.dataset_squeeze + symbol_data
+                dataset_squeeze = dataset_squeeze + symbol_data
             dataset_all = [] # clear memory
             
-            return self.dataset_squeeze
+            image_set = pd.DataFrame(dataset_squeeze, columns=['img', 'ret5', 'ret20'])
+            image_set['index'] =  image_set.index
+            smote = SMOTE()
+            if self.label == 'RET5':
+                resample_index, _ = smote.fit_resample(image_set[['index', 'ret20']], image_set['ret5'])
+                image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
+                num0 = image_set.loc[image_set['ret5'] == 0].shape[0]
+                num1 = image_set.loc[image_set['ret5'] == 1].shape[0]
+                
+            else:
+                resample_index, _ = smote.fit_resample(image_set[['index', 'ret5']], image_set['ret20'])
+                image_set = image_set.iloc[resample_index['index']][['img', 'ret5', 'ret20']]
+                num0 = image_set.loc[image_set['ret20'] == 0].shape[0]
+                num1 = image_set.loc[image_set['ret20'] == 1].shape[0]
+                image_set = image_set.values.to_list()
+                
+            print(f"LABEL: {self.label}\nResampled ImageSet: 0: {num0}/{num0+num1}, 1: {num1}/{num0+num1}")
+            
+            return image_set
     
         else:
             return dataset_all

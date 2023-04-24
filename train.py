@@ -1,7 +1,5 @@
-import pandas as pd
-import numpy as np
-import torch
-import matplotlib.pyplot as plt
+from __init__ import *
+
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

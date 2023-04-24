@@ -1,13 +1,9 @@
-from importlib import reload
+from __init__ import *
+from utils import *
 from model import *
 from train import *
 from dataset import *
-import dataset as _D
-reload(_D)
-import utils as _U
-reload(_U)
-import yaml
-import argparse
+
 
 parser = argparse.ArgumentParser(description='Train Models via YAML files')
 parser.add_argument('setting', type=str, \
@@ -16,10 +12,10 @@ parser.add_argument('setting', type=str, \
 args = parser.parse_args()
 
 with open(args.setting, 'r') as f:
-    setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
+    setting = Dict2ObjParser(yaml.safe_load(f)).parse()
 
 
-dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
+dataset = ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                             start_date = setting.DATASET.START_DATE, \
                             end_date = setting.DATASET.END_DATE, \
                             mode = setting.DATASET.MODE, \
