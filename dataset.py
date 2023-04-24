@@ -1,5 +1,6 @@
 from __init__ import *
-from utils import *
+import utils as _U
+reload(_U)
 
 
 SUPPORTED_INDICATORS = ['MA']
@@ -139,7 +140,7 @@ class ImageDataSet():
         print(f"DataSet Initialized\n \t - Mode:         {self.mode.upper()}\n \t - Image Size:   {self.image_size}\n \t - Time Period:  {self.start_date} - {self.end_date}\n \t - Indicators:   {ind_info}\n \t - Volume Shown: {self.show_volume}")
         
         
-    @timer('Load Data', '8')
+    @_U.timer('Load Data', '8')
     def load_data(self):
         if 'data' not in os.listdir():
             print('Download Original Tabular Data')
@@ -193,13 +194,14 @@ class ImageDataSet():
                 image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
                 num0 = image_set.loc[image_set['ret5'] == 0].shape[0]
                 num1 = image_set.loc[image_set['ret5'] == 1].shape[0]
+                image_set = image_set.values.tolist()
                 
             else:
                 resample_index, _ = smote.fit_resample(image_set[['index', 'ret5']], image_set['ret20'])
-                image_set = image_set.iloc[resample_index['index']][['img', 'ret5', 'ret20']]
+                image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
                 num0 = image_set.loc[image_set['ret20'] == 0].shape[0]
                 num1 = image_set.loc[image_set['ret20'] == 1].shape[0]
-                image_set = image_set.values.to_list()
+                image_set = image_set.values.tolist()
                 
             print(f"LABEL: {self.label}\nResampled ImageSet: 0: {num0}/{num0+num1}, 1: {num1}/{num0+num1}")
             

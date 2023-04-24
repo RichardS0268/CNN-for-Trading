@@ -1,10 +1,13 @@
 from __init__ import *
-from utils import *
-from model import *
-from dataset import *
+import utils as _U
+reload(_U)
+import model as _M
+reload(_M)
+import dataset as _D
+reload(_D)
 
 
-def model_inference(model):
+def model_inference(model, setting):
     
     model.eval()
     # iterate over test data
@@ -14,10 +17,11 @@ def model_inference(model):
     for m_idx in range(len(sub_points)-1):
         print(f"Inferencing: {sub_points[m_idx]} - {sub_points[m_idx+1]}")
         
-        inference_dataset = ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
+        inference_dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                                         start_date = sub_points[m_idx], \
                                         end_date = sub_points[m_idx+1], \
                                         mode = 'inference', \
+                                        label = setting.TRAIN.LABEL, \
                                         indicators = setting.DATASET.INDICATORS, \
                                         show_volume = setting.DATASET.SHOW_VOLUME, \
                                         parallel_num=setting.DATASET.PARALLEL_NUM)
@@ -51,7 +55,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with open(args.setting, 'r') as f:
-        setting = Dict2ObjParser(yaml.safe_load(f)).parse()
+        setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
@@ -62,13 +66,13 @@ if __name__ == '__main__':
         os.system(f"cd factors && mkdir {setting.INFERENCE.FACTORS_SAVE_FILE.split('/')[1]}")
         
     if setting.MODEL == 'CNN5d':
-        model = CNN5d()
+        model = _M.CNN5d()
     else:
-        model = CNN20d()
+        model = _M.CNN20d()
     model.to(device)
 
     state_dict = torch.load(setting.TRAIN.MODEL_SAVE_FILE)
     model.load_state_dict(state_dict['model_state_dict'])
 
-    factors = model_inference(model)
+    factors = model_inference(model, setting)
     factors.to_csv(setting.INFERENCE.FACTORS_SAVE_FILE)

@@ -1,10 +1,15 @@
 from __init__ import *
-from model import *
-from train import *
-from dataset import *
+import model as _M
+reload(_M)
+import train as _T
+reload(_T)
+import dataset as _D
+reload(_D)
+import utils as _U
+reload(_U)
 
 
-def model_test(model, label_type, classes, criterion):
+def model_test(model, label_type, classes, criterion, setting):
     # track test loss
     test_loss = 0.0
     class_correct = [0., 0.]
@@ -16,10 +21,11 @@ def model_test(model, label_type, classes, criterion):
     
     for m_idx in range(len(sub_points)-1):
         print(f"Testing: {sub_points[m_idx]} - {sub_points[m_idx+1]}")
-        test_dataset = ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
+        test_dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                             start_date = sub_points[m_idx], \
                             end_date = sub_points[m_idx+1], \
                             mode = 'default', \
+                            label = setting.TRAIN.LABEL, \
                             indicators = setting.DATASET.INDICATORS, \
                             show_volume = setting.DATASET.SHOW_VOLUME, \
                             parallel_num=setting.DATASET.PARALLEL_NUM)
@@ -80,16 +86,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with open(args.setting, 'r') as f:
-        setting = Dict2ObjParser(yaml.safe_load(f)).parse()
+        setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
     
     
     if setting.MODEL == 'CNN5d':
-        model = CNN5d()
+        model = _M.CNN5d()
     else:
-        model = CNN20d()
+        model = _M.CNN20d()
     model.to(device)
 
     state_dict = torch.load(setting.TRAIN.MODEL_SAVE_FILE)
@@ -97,4 +103,4 @@ if __name__ == '__main__':
 
     criterion = nn.BCELoss()
 
-    model_test(model, setting.TRAIN.LABEL, ['down', 'up'], criterion)
+    model_test(model, setting.TRAIN.LABEL, ['down', 'up'], criterion, setting)
