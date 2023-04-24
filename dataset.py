@@ -23,7 +23,7 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
         start_date  -> int: truncate extra rows after generating images,
         indicators  -> dict: technical indicators added on the image, e.g. {"MA": [20]},
         show_volume -> boolean: show volume bars or not
-        mode        -> 'default': for train & validation & test; 'inference': for inference
+        mode        -> 'train': for train & validation; 'test': for test; 'inference': for inference
     ]
     
     Note: A single day's data occupies 3 pixel (width). First rows's dates should be prior to the start date in order to make sure there are enough data to generate image for the start date.
@@ -94,7 +94,7 @@ def single_symbol_image(tabular_df, image_size, start_date, sample_rate, indicat
         entry = [image, label_ret5, label_ret20]
         dataset.append(entry)
     
-    if mode == 'default':
+    if mode == 'train' or mode == 'test':
         return dataset
     else:
         return [tabular_df.iloc[0]['code'], dataset, valid_dates]
@@ -106,7 +106,7 @@ class ImageDataSet():
         assert isinstance(start_date, int) and isinstance(end_date, int), f'Type Error: start_date & end_date shoule be int'
         assert start_date < end_date, f'start date {start_date} cannnot be later than end date {end_date}'
         assert win_size in [5, 20], f'Wrong look back days: {win_size}'
-        assert mode in ['default', 'inference'], f'Type Error: {mode}'
+        assert mode in ['train', 'test', 'inference'], f'Type Error: {mode}'
         assert label in ['RET5', 'RET20'], f'Wrong Label: {label}'
         assert indicators is None or len(indicators)%2 == 0, 'Config Error, length of indicators should be even'
         if indicators:
@@ -180,30 +180,36 @@ class ImageDataSet():
                                             mode = self.mode
                                         ) for g in tqdm(self.df.groupby('code'), desc=f'Generating Images (sample rate: {sample_rate})'))
         
-        if self.mode == 'default':
-            dataset_squeeze = []
+        if self.mode == 'train' or self.mode == 'test':
+            image_set = []
             for symbol_data in dataset_all:
-                dataset_squeeze = dataset_squeeze + symbol_data
+                image_set = image_set + symbol_data
             dataset_all = [] # clear memory
             
-            image_set = pd.DataFrame(dataset_squeeze, columns=['img', 'ret5', 'ret20'])
-            image_set['index'] =  image_set.index
-            smote = SMOTE()
-            if self.label == 'RET5':
-                resample_index, _ = smote.fit_resample(image_set[['index', 'ret20']], image_set['ret5'])
-                image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
-                num0 = image_set.loc[image_set['ret5'] == 0].shape[0]
-                num1 = image_set.loc[image_set['ret5'] == 1].shape[0]
-                image_set = image_set.values.tolist()
-                
-            else:
-                resample_index, _ = smote.fit_resample(image_set[['index', 'ret5']], image_set['ret20'])
-                image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
-                num0 = image_set.loc[image_set['ret20'] == 0].shape[0]
-                num1 = image_set.loc[image_set['ret20'] == 1].shape[0]
-                image_set = image_set.values.tolist()
-                
-            print(f"LABEL: {self.label}\nResampled ImageSet: 0: {num0}/{num0+num1}, 1: {num1}/{num0+num1}")
+            if self.mode == 'train': # resample to handle imbalance
+                image_set = pd.DataFrame(image_set, columns=['img', 'ret5', 'ret20'])
+                image_set['index'] =  image_set.index
+                smote = SMOTE()
+                if self.label == 'RET5':
+                    num0_before = image_set.loc[image_set['ret5'] == 0].shape[0]
+                    num1_before = image_set.loc[image_set['ret5'] == 1].shape[0]
+                    resample_index, _ = smote.fit_resample(image_set[['index', 'ret20']], image_set['ret5'])
+                    image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
+                    num0 = image_set.loc[image_set['ret5'] == 0].shape[0]
+                    num1 = image_set.loc[image_set['ret5'] == 1].shape[0]
+                    image_set = image_set.values.tolist()
+                    
+                else:
+                    num0_before = image_set.loc[image_set['ret20'] == 0].shape[0]
+                    num1_before = image_set.loc[image_set['ret20'] == 1].shape[0]
+                    resample_index, _ = smote.fit_resample(image_set[['index', 'ret5']], image_set['ret20'])
+                    image_set = image_set[['img', 'ret5', 'ret20']].loc[resample_index['index']]
+                    num0 = image_set.loc[image_set['ret20'] == 0].shape[0]
+                    num1 = image_set.loc[image_set['ret20'] == 1].shape[0]
+                    image_set = image_set.values.tolist()
+                    
+                print(f"LABEL: {self.label}\n\tBefore Resample: 0: {num0_before}/{num0_before+num1_before}, 1: {num1_before}/{num0_before+num1_before}\n\tResampled ImageSet: 0: {num0}/{num0+num1}, 1: {num1}/{num0+num1}")
+                 
             
             return image_set
     

@@ -24,7 +24,7 @@ def model_test(model, label_type, classes, criterion, setting):
         test_dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                             start_date = sub_points[m_idx], \
                             end_date = sub_points[m_idx+1], \
-                            mode = 'default', \
+                            mode = 'test', \
                             label = setting.TRAIN.LABEL, \
                             indicators = setting.DATASET.INDICATORS, \
                             show_volume = setting.DATASET.SHOW_VOLUME, \

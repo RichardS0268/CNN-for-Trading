@@ -94,7 +94,7 @@ def train_n_epochs(n_epochs, model, label_type, train_loader, valid_loader, crit
         else:
             invariant_epochs = invariant_epochs + 1
         
-        if invariant_epochs == early_stop_epoch:
+        if invariant_epochs >= early_stop_epoch:
             print(f"Early Stop at Epoch [{epoch_i}]: Performance hasn't enhanced for {early_stop_epoch} epochs")
             break
 

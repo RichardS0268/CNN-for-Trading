@@ -22,7 +22,7 @@ with open(args.setting, 'r') as f:
 dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                             start_date = setting.DATASET.START_DATE, \
                             end_date = setting.DATASET.END_DATE, \
-                            mode = setting.DATASET.MODE, \
+                            mode = 'train', \
                             label = setting.TRAIN.LABEL, \
                             indicators = setting.DATASET.INDICATORS, \
                             show_volume = setting.DATASET.SHOW_VOLUME, \
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=setting.TRAIN.LEARNING_RATE, weight_decay=setting.TRAIN.WEIGHT_DECAY)
     
-    train_loss_set, valid_loss_set, train_acc_set, valid_acc_set = _T.train_n_epochs(setting.TRAIN.NEPOCH, model, setting.TRAIN.LABEL, train_loader, valid_loader, criterion, optimizer, setting.TRAIN.MODEL_SAVE_FILE, setting.TRAIN.MODEL_SAVE_FILE)
+    train_loss_set, valid_loss_set, train_acc_set, valid_acc_set = _T.train_n_epochs(setting.TRAIN.NEPOCH, model, setting.TRAIN.LABEL, train_loader, valid_loader, criterion, optimizer, setting.TRAIN.MODEL_SAVE_FILE, setting.TRAIN.EARLY_STOP_EPOCH)
     
     log = pd.DataFrame([train_loss_set, train_acc_set, valid_loss_set, valid_acc_set], index=['train_loss', 'train_acc', 'valid_loss', 'valid_acc'])
     log.to_csv(setting.TRAIN.LOG_SAVE_FILE)
