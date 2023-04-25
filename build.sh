@@ -9,5 +9,5 @@ do
   current_time=$(date "+%Y.%m.%d-%H.%M.%S")
   git add .
   git commit -m "Finished $f at $current_time"
-  git push origin main
+  git push -u origin main
 done
