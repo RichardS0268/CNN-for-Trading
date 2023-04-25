@@ -6,9 +6,9 @@ DATASET:
   END_DATE: 20131231
   MODE: default
   INDICATORS: 
-    - NAME: MA
-    - PARAM: 5 # using data augmentation
-  SHOW_VOLUME: True # using data augmentation
+    # - NAME: MA
+    # - PARAM: 5 # using data augmentation
+  SHOW_VOLUME: False # using data augmentation
   SAMPLE_RATE: 0.2
   PARALLEL_NUM: 32
 
@@ -19,8 +19,8 @@ TRAIN:
   NEPOCH: 100
   LEARNING_RATE: 0.00001
   WEIGHT_DECAY: 0.01
-  MODEL_SAVE_FILE: models/I5R20/I5R20_11-13.tar
-  LOG_SAVE_FILE: logs/I5R20/I5R20_11-13.csv
+  MODEL_SAVE_FILE: models/I5R20_OHLC/I5R20_OHLC_11-13.tar
+  LOG_SAVE_FILE: logs/I5R20_OHLC/I5R20_OHLC_11-13.csv
   EARLY_STOP_EPOCH: 4
 
 TEST:
@@ -28,4 +28,4 @@ TEST:
   END_DATE: 20141231
 
 INFERENCE:
-  FACTORS_SAVE_FILE: factors/I5R20/I5R20_13-14.csv
+  FACTORS_SAVE_FILE: factors/I5R20_OHLC/I5R20_OHLC_13-14.csv
