@@ -21,7 +21,7 @@ with open(args.setting, 'r') as f:
 
 dir = setting.TRAIN.MODEL_SAVE_FILE.split('/')[0] + '/' + setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]
 if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir):
-    print('Pretrained Model Exist')
+    print(f'Pretrained Model: {args.setting} Exist')
     sys.exit(0)
 
 dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
