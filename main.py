@@ -19,6 +19,15 @@ args = parser.parse_args()
 with open(args.setting, 'r') as f:
     setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
 
+if 'models' not in os.listdir('./'):
+    os.system('mkdir models')
+if setting.TRAIN.MODEL_SAVE_FILE.split('/')[1] not in os.listdir('./models/'):
+    os.system(f"cd models && mkdir {setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]}")
+if 'logs' not in os.listdir('./'):
+    os.system('mkdir logs')
+if setting.TRAIN.LOG_SAVE_FILE.split('/')[1] not in os.listdir('./logs/'):
+    os.system(f"cd logs && mkdir {setting.TRAIN.LOG_SAVE_FILE.split('/')[1]}")
+
 dir = setting.TRAIN.MODEL_SAVE_FILE.split('/')[0] + '/' + setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]
 if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir):
     print(f'Pretrained Model: {args.setting} Already Exist')
@@ -46,21 +55,8 @@ valid_loader = torch.utils.data.DataLoader(dataset=valid_loader, batch_size=sett
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 assert setting.MODEL in ['CNN5d', 'CNN20d'], f"Wrong Model Template: {setting.MODEL}"
 
-if 'models' not in os.listdir('./'):
-    os.system('mkdir models')
-if setting.TRAIN.MODEL_SAVE_FILE.split('/')[1] not in os.listdir('./models/'):
-    os.system(f"cd models && mkdir {setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]}")
-if 'logs' not in os.listdir('./'):
-    os.system('mkdir logs')
-if setting.TRAIN.LOG_SAVE_FILE.split('/')[1] not in os.listdir('./logs/'):
-    os.system(f"cd logs && mkdir {setting.TRAIN.LOG_SAVE_FILE.split('/')[1]}")
-
 
 if __name__ == '__main__':
-    dir = setting.TRAIN.MODEL_SAVE_FILE.split('/')[0] + '/' + setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]
-    if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir):
-        print('Pretrained Model Exist')
-        exit
     
     if setting.MODEL == 'CNN5d':
         model = _M.CNN5d()
