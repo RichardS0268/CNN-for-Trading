@@ -1,8 +1,8 @@
 #!/bin/bash
 
-FILES3=$(find configs/I5R5 -type f -name '*.yml')
+FILES=$(find configs -type f -name '*.yml')
 
-for f in $FILES3
+for f in $FILES
 do
   python main.py $f
 
