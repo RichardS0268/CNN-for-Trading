@@ -7,6 +7,7 @@ import train as _T
 reload(_T)
 import dataset as _D
 reload(_D)
+import sys
 
 
 parser = argparse.ArgumentParser(description='Train Models via YAML files')
@@ -18,6 +19,10 @@ args = parser.parse_args()
 with open(args.setting, 'r') as f:
     setting = _U.Dict2ObjParser(yaml.safe_load(f)).parse()
 
+dir = setting.TRAIN.MODEL_SAVE_FILE.split('/')[0] + '/' + setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]
+if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir):
+    print('Pretrained Model Exist')
+    sys.exit(0)
 
 dataset = _D.ImageDataSet(win_size = setting.DATASET.LOOKBACK_WIN, \
                             start_date = setting.DATASET.START_DATE, \
@@ -52,10 +57,10 @@ if setting.TRAIN.LOG_SAVE_FILE.split('/')[1] not in os.listdir('./logs/'):
 
 
 if __name__ == '__main__':
-    dir = setting.TRAIN.MODEL_SAVE_FILE
-    dir = dir.split('/')[0] + '/' + dir.split('/')[1]
-    if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir)
-    
+    dir = setting.TRAIN.MODEL_SAVE_FILE.split('/')[0] + '/' + setting.TRAIN.MODEL_SAVE_FILE.split('/')[1]
+    if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir):
+        print('Pretrained Model Exist')
+        exit
     
     if setting.MODEL == 'CNN5d':
         model = _M.CNN5d()
