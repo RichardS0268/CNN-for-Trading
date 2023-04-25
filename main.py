@@ -52,6 +52,11 @@ if setting.TRAIN.LOG_SAVE_FILE.split('/')[1] not in os.listdir('./logs/'):
 
 
 if __name__ == '__main__':
+    dir = setting.TRAIN.MODEL_SAVE_FILE
+    dir = dir.split('/')[0] + '/' + dir.split('/')[1]
+    if setting.TRAIN.MODEL_SAVE_FILE.split('/')[2] in os.listdir(dir)
+    
+    
     if setting.MODEL == 'CNN5d':
         model = _M.CNN5d()
     else:
