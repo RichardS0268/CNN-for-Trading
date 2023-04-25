@@ -6,6 +6,10 @@ foreach ($file in $files) {
     $path = $file.FullName
     # log the path
     Write-Host $path
+    # continue if is I5R5
+    if ($path -like "*I5R5*") {
+        continue
+    }
     # run the command
     python main.py $path
 
