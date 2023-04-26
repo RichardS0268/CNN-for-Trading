@@ -12,6 +12,7 @@ reload(_U)
 def model_test(model, label_type, classes, criterion, setting):
     # track test loss
     test_loss = 0.0
+    test_num = 0
     class_correct = [0., 0.]
     class_total = [0., 0.]
 
@@ -31,6 +32,7 @@ def model_test(model, label_type, classes, criterion, setting):
                             parallel_num=setting.DATASET.PARALLEL_NUM)
         test_imageset = test_dataset.generate_images(1.0)
         test_loader = torch.utils.data.DataLoader(dataset=test_imageset, batch_size=setting.TRAIN.BATCH_SIZE, shuffle=False)
+        test_num += len(test_loader.dataset)
             
         for i, (data, ret5, ret20) in enumerate(test_loader):
             assert label_type in ['RET5', 'RET20'], f"Wrong Label Type: {label_type}"
@@ -62,7 +64,7 @@ def model_test(model, label_type, classes, criterion, setting):
                 class_total[label] += 1
 
     # average test loss
-    test_loss = test_loss/len(test_loader.dataset)
+    test_loss = test_loss/test_num
     print('Test Loss: {:.6f}\n'.format(test_loss))
 
     for i in range(2):
