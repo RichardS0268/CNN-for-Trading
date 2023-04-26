@@ -10,7 +10,9 @@ DATASET:
     # - PARAM: 20 # using data augmentation
   SHOW_VOLUME: False # using data augmentation
   SAMPLE_RATE: 0.2
-  PARALLEL_NUM: 32
+#  PARALLEL_NUM: 32
+  PARALLEL_NUM: -1
+
 
 TRAIN:
   LABEL: RET5
