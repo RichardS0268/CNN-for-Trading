@@ -1,5 +1,5 @@
 # CNN-for-Trading
-| ***Report:*** *https://www.richardsong.space/cnn-for-trading*
+| ***Report:*** *https://www.richardsong.live/cnn-for-trading*
 
 ## Dataset
 <img src="https://user-images.githubusercontent.com/76866748/233394435-9644f6c3-50a2-4461-9155-816aa941bc5e.png" width=80%>
